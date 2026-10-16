@@ -1,0 +1,54 @@
+---
+- name: Set up a CloudPulse AI server
+  hosts: cloudpulse
+  become: true
+  vars:
+    project_dir: /home/ubuntu/cloudpulse-ai
+    repo_url: https://github.com/kavin-cloud05/cloudpulse-ai.git
+
+  tasks:
+    - name: Install required packages
+      ansible.builtin.apt:
+        name:
+          - git
+          - curl
+          - python3-venv
+          - python3-pip
+          - docker.io
+          - docker-compose-v2
+          - docker-buildx
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Make sure Docker is enabled and running
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Let the ubuntu user run Docker
+      ansible.builtin.user:
+        name: ubuntu
+        groups: docker
+        append: true
+
+    - name: Get the project code (does not touch an existing copy)
+      ansible.builtin.git:
+        repo: "{{ repo_url }}"
+        dest: "{{ project_dir }}"
+        update: false
+      become: false
+
+    - name: Create .env with random passwords, only if it is missing
+      ansible.builtin.copy:
+        dest: "{{ project_dir }}/.env"
+        mode: "0600"
+        force: false
+        content: |
+          MYSQL_DATABASE=cloudpulse
+          MYSQL_USER=cloudpulse
+          MYSQL_PASSWORD={{ lookup('ansible.builtin.password', '/dev/null length=24 chars=ascii_letters,digits') }}
+          MYSQL_ROOT_PASSWORD={{ lookup('ansible.builtin.password', '/dev/null length=24 chars=ascii_letters,digits') }}
+      become: false
+      no_log: true
