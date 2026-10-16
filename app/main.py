@@ -1,6 +1,8 @@
+import pymysql
 from flask import Flask, jsonify, request
 
 from ai.diagnostics import diagnose
+from app.services.db import db_enabled, list_incidents, save_incident
 from app.services.health import run_health_check
 
 MAX_EVIDENCE_CHARS = 5000
@@ -28,7 +30,18 @@ def create_app():
                 jsonify(error=f"'evidence' must be at most {MAX_EVIDENCE_CHARS} characters"),
                 400,
             )
-        return jsonify(diagnose(evidence))
+        report = diagnose(evidence)
+        report["incident_id"] = save_incident(report) if report["matched"] else None
+        return jsonify(report)
+
+    @app.get("/api/v1/incidents")
+    def incidents():
+        if not db_enabled():
+            return jsonify(error="database is not configured"), 503
+        try:
+            return jsonify(incidents=list_incidents())
+        except pymysql.MySQLError:
+            return jsonify(error="database is unavailable"), 503
 
     return app
 
