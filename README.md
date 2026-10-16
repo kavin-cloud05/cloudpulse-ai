@@ -7,17 +7,18 @@ Built on an AWS EC2 Ubuntu server with Bash, Python, Flask, pytest and Docker.
 ## What works today
 
 - [x] Linux health check script (CPU, memory, disk, uptime, top processes) with warning and critical thresholds and exit codes 0, 1, 2
-- [x] Flask API: GET /health, GET /api/v1/system, POST /api/v1/diagnose
+- [x] Flask API: GET /health, GET /api/v1/system, POST /api/v1/diagnose, GET /api/v1/incidents
 - [x] Rule-based diagnostics for 6 common problems: disk full, port in use, connection refused, AWS AccessDenied, out of memory, permission denied
 - [x] Secret redaction (AWS key IDs, passwords, tokens, private keys) before evidence is processed
 - [x] Input validation on the diagnose endpoint (must be a non-empty string, max 5000 characters)
-- [x] 20 automated pytest tests
+- [x] 24 automated pytest tests
 - [x] Backend runs in a Docker container with gunicorn as a non-root user
+- [x] MySQL incident history via Docker Compose: each diagnosis is saved and listed at GET /api/v1/incidents (data survives restarts)
 
 ## Not built yet
 
 - [ ] LLM-generated explanations (the field exists in the response but is empty)
-- [ ] MySQL incident history, React dashboard, chatbot
+- [ ] React dashboard, chatbot
 - [ ] Jenkins, ECR, Kubernetes, Ansible, Prometheus, Grafana
 
 ## Run it
