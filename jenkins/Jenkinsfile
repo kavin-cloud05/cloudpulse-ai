@@ -1,0 +1,37 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Test') {
+            steps {
+                sh '''
+                    python3 -m venv .venv
+                    . .venv/bin/activate
+                    pip install -r requirements.txt
+                    python -m pytest -q
+                '''
+            }
+        }
+        stage('Build image') {
+            steps {
+                sh 'docker build -f docker/Dockerfile.backend -t cloudpulse-backend:${BUILD_NUMBER} .'
+            }
+        }
+        stage('Smoke test') {
+            steps {
+                sh '''
+                    docker rm -f cloudpulse-smoke 2>/dev/null || true
+                    docker run -d --name cloudpulse-smoke -p 5055:5000 cloudpulse-backend:${BUILD_NUMBER}
+                    sleep 5
+                    curl -fsS http://localhost:5055/health
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker rm -f cloudpulse-smoke 2>/dev/null || true'
+        }
+    }
+}
